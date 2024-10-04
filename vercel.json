@@ -6,15 +6,10 @@
       "use": "@vercel/next"
     }
   ],
-  "functions": {
-    "pages/api/**/*.ts": {
-      "runtime": "@vercel/node@2.8.2"
-    }
-  },
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "src": "/(.*)",
+      "dest": "/$1"
     }
   ]
 }
