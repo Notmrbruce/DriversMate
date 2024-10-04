@@ -26,7 +26,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const form = formidable(options)
 
   try {
-    const [fields, files] = await form.parse(req) as [formidable.Fields, formidable.Files]
+    const [fields, files] = await new Promise<[formidable.Fields, formidable.Files]>((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err)
+        resolve([fields, files])
+      })
+    })
 
     const inputFile = files.file?.[0]
     const option = fields.option?.[0]
