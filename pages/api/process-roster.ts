@@ -35,9 +35,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Convert CSV to XLSX
     const xlsxFile = inputFile.filepath.replace('.csv', '.xlsx')
-    await execPromise(`python3 ${path.join(process.cwd(), 'scripts', 'csv_to_xlsx.py')} "${inputFile.filepath}" "${xlsxFile}"`)
+    await execPromise(`python3 "${path.join(process.cwd(), 'scripts', 'csv_to_xlsx.py')}" "${inputFile.filepath}" "${xlsxFile}"`)
 
     // Process the XLSX file
     let scriptName
     switch (option) {
-      case 'daysoff
+      case 'daysoff':
+        scriptName = 'daysoff.py'
+        break
+      case 'workdays':
+        scriptName = 'workdays.py'
+        break
+      default:
+        scriptName = 'fullroster.py'
+    }
+    await execPromise(`python3 "${path.join(process.cwd(), 'scripts', scriptName)}" "${xlsxFile}"`)
+
+    // Convert XLSX back to CSV
+    const outputCsvFile = xlsxFile.replace('.xlsx', '_processed.csv')
+    await execPromise(`python3 "${path.join(process.cwd(), 'scripts', 'xlsx_to_csv.py')}" "${xlsxFile}" "${outputCsvFile}"`)
+
+    // Read the processed CSV file
+    const fileContent = fs.readFileSync(outputCsvFile)
+
+    // Clean up temporary files
+    fs.unlinkSync(inputFile.filepath)
+    fs.unlinkSync(xlsxFile)
+    fs.unlinkSync(outputCsvFile)
+
+    // Send the processed CSV file
+    res.setHeader('Content-Type', 'text/csv')
+    res.setHeader('Content-Disposition', 'attachment; filename=processed_roster.csv')
+    return res.status(200).send(fileContent)
+  } catch (error) {
+    console.error('Error processing file:', error)
+    return res.status(500).json({ message: 'Error processing file' })
+  }
+}
