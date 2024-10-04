@@ -1,7 +1,4 @@
 import { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function ICALRoster() {
   const [file, setFile] = useState<File | null>(null)
@@ -52,49 +49,27 @@ export default function ICALRoster() {
 
   return (
     <div className="min-h-screen bg-[#ff914d] flex flex-col items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">ICAL Roster Processor</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="file" className="block text-sm font-medium text-gray-700 mb-1">
-                Upload CSV File
-              </label>
-              <input
-                type="file"
-                id="file"
-                accept=".csv"
-                onChange={handleFileChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="processingOption" className="block text-sm font-medium text-gray-700 mb-1">
-                Processing Option
-              </label>
-              <Select value={processingOption} onValueChange={setProcessingOption}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select processing option" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="full">Full Roster</SelectItem>
-                  <SelectItem value="daysoff">Days Off Only</SelectItem>
-                  <SelectItem value="workdays">Work Days Only</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              type="submit"
-              disabled={!file || processing}
-              className="w-full"
-            >
-              {processing ? 'Processing...' : 'Process File'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
+      <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
+        <h1 className="text-2xl font-bold text-center mb-6">ICAL Roster Processor</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="file" className="block text-sm font-medium text-gray-700 mb-1">
+              Upload CSV File
+            </label>
+            <input
+              type="file"
+              id="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="processingOption" className="block text-sm font-medium text-gray-700 mb-1">
+              Processing Option
+            </label>
+            <select
+              id="processingOption"
+              value={processingOption}
+              onChange={(e) => setProcessingOption(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue
