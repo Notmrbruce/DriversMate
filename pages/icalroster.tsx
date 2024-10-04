@@ -81,3 +81,20 @@ export default function ICALRoster() {
                 <SelectContent>
                   <SelectItem value="full">Full Roster</SelectItem>
                   <SelectItem value="daysoff">Days Off Only</SelectItem>
+                  <SelectItem value="workdays">Work Days Only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              type="submit"
+              disabled={!file || processing}
+              className="w-full"
+            >
+              {processing ? 'Processing...' : 'Process File'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
