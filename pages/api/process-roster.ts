@@ -18,20 +18,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ message: 'Method not allowed' })
   }
 
-  const form = new formidable.IncomingForm()
-  form.uploadDir = path.join(process.cwd(), 'tmp')
-  form.keepExtensions = true
+  const options: formidable.Options = {
+    uploadDir: path.join(process.cwd(), 'tmp'),
+    keepExtensions: true,
+  }
+
+  const form = formidable(options)
 
   try {
-    const { fields, files } = await new Promise((resolve, reject) => {
-      form.parse(req, (err, fields, files) => {
-        if (err) reject(err)
-        resolve({ fields, files } as { fields: formidable.Fields, files: formidable.Files })
-      })
-    })
+    const [fields, files] = await form.parse(req) as [formidable.Fields, formidable.Files]
 
-    const inputFile = files.file as formidable.File
-    const option = fields.option as string
+    const inputFile = files.file?.[0]
+    const option = fields.option?.[0]
+
+    if (!inputFile || !option) {
+      throw new Error('Missing file or option')
+    }
 
     // Convert CSV to XLSX
     const xlsxFile = inputFile.filepath.replace('.csv', '.xlsx')
