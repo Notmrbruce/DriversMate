@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const options: formidable.Options = {
-    uploadDir: path.join(process.cwd(), 'tmp'),
+    uploadDir: '/tmp',
     keepExtensions: true,
   }
 
@@ -40,9 +40,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new Error('Missing file or option')
     }
 
+    const pythonPath = process.env.VERCEL_REGION ? '/var/lang/bin/python3' : 'python3'
+    const scriptPath = path.join(process.cwd(), 'scripts')
+
     // Convert CSV to XLSX
     const xlsxFile = inputFile.filepath.replace('.csv', '.xlsx')
-    await execPromise(`python3 "${path.join(process.cwd(), 'scripts', 'csv_to_xlsx.py')}" "${inputFile.filepath}" "${xlsxFile}"`)
+    await execPromise(`${pythonPath} "${path.join(scriptPath, 'csv_to_xlsx.py')}" "${inputFile.filepath}" "${xlsxFile}"`)
 
     // Process the XLSX file
     let scriptName
@@ -56,11 +59,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       default:
         scriptName = 'fullroster.py'
     }
-    await execPromise(`python3 "${path.join(process.cwd(), 'scripts', scriptName)}" "${xlsxFile}"`)
+    await execPromise(`${pythonPath} "${path.join(scriptPath, scriptName)}" "${xlsxFile}"`)
 
     // Convert XLSX back to CSV
     const outputCsvFile = xlsxFile.replace('.xlsx', '_processed.csv')
-    await execPromise(`python3 "${path.join(process.cwd(), 'scripts', 'xlsx_to_csv.py')}" "${xlsxFile}" "${outputCsvFile}"`)
+    await execPromise(`${pythonPath} "${path.join(scriptPath, 'xlsx_to_csv.py')}" "${xlsxFile}" "${outputCsvFile}"`)
 
     // Read the processed CSV file
     const fileContent = fs.readFileSync(outputCsvFile)
@@ -76,6 +79,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).send(fileContent)
   } catch (error) {
     console.error('Error processing file:', error)
-    return res.status(500).json({ message: 'Error processing file' })
+    return res.status(500).json({ message: 'Error processing file', error: error.message })
   }
 }
