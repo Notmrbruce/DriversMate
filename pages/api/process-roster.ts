@@ -33,8 +33,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     })
 
-    const inputFile = files.file?.[0]
-    const option = fields.option?.[0]
+    const inputFile = Array.isArray(files.file) ? files.file[0] : files.file
+    const option = Array.isArray(fields.option) ? fields.option[0] : fields.option
 
     if (!inputFile || !option) {
       throw new Error('Missing file or option')
