@@ -1,8 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import formidable from 'formidable'
 import fs from 'fs'
-import { exec } from 'child_process'
 import path from 'path'
+import { exec } from 'child_process'
+import util from 'util'
+
+const execPromise = util.promisify(exec)
 
 export const config = {
   api: {
@@ -11,64 +14,49 @@ export const config = {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === 'POST') {
-    const form = new formidable.IncomingForm()
-    form.parse(req, async (err, fields, files) => {
-      if (err) {
-        return res.status(500).json({ error: 'Error parsing form data' })
-      }
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method not allowed' })
+  }
 
-      const file = files.file as formidable.File
-      const option = fields.option as string
+  const form = new formidable.IncomingForm()
+  form.uploadDir = path.join(process.cwd(), 'tmp')
+  form.keepExtensions = true
 
-      if (!file || !option) {
-        return res.status(400).json({ error: 'Missing file or processing option' })
-      }
-
-      const tempPath = file.filepath
-      const targetPath = path.join('/tmp', file.originalFilename || 'upload.csv')
-
-      fs.copyFileSync(tempPath, targetPath)
-
-      let scriptPath
-      switch (option) {
-        case 'full':
-          scriptPath = path.join(process.cwd(), 'scripts', 'roster_reformatter_enhanced.py')
-          break
-        case 'daysoff':
-          scriptPath = path.join(process.cwd(), 'scripts', 'roster_reformatter_rdonly.py')
-          break
-        case 'workdays':
-          scriptPath = path.join(process.cwd(), 'scripts', 'roster_reformatter_workonly.py')
-          break
-        default:
-          return res.status(400).json({ error: 'Invalid processing option' })
-      }
-
-      exec(`python ${scriptPath} ${targetPath}`, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`Error: ${error.message}`)
-          return res.status(500).json({ error: 'Error processing file' })
-        }
-        if (stderr) {
-          console.error(`stderr: ${stderr}`)
-          return res.status(500).json({ error: 'Error processing file' })
-        }
-
-        const outputPath = targetPath.replace('.csv', '.xlsx')
-        const fileContent = fs.readFileSync(outputPath)
-
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        res.setHeader('Content-Disposition', 'attachment; filename=processed_roster.xlsx')
-        res.send(fileContent)
-
-        // Clean up temporary files
-        fs.unlinkSync(targetPath)
-        fs.unlinkSync(outputPath)
+  try {
+    const { fields, files } = await new Promise((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err)
+        resolve({ fields, files } as { fields: formidable.Fields, files: formidable.Files })
       })
     })
-  } else {
-    res.setHeader('Allow', ['POST'])
-    res.status(405).end(`Method ${req.method} Not Allowed`)
-  }
-}
+
+    const inputFile = files.file as formidable.File
+    const option = fields.option as string
+
+    // Convert CSV to XLSX
+    const xlsxFile = inputFile.filepath.replace('.csv', '.xlsx')
+    await execPromise(`python3 ${path.join(process.cwd(), 'scripts', 'csv_to_xlsx.py')} "${inputFile.filepath}" "${xlsxFile}"`)
+
+    // Process the XLSX file
+    let scriptName
+    switch (option) {
+      case 'daysoff':
+        scriptName = 'daysoff.py'
+        break
+      case 'workdays':
+        scriptName = 'workdays.py'
+        break
+      default:
+        scriptName = 'fullroster.py'
+    }
+    await execPromise(`python3 ${path.join(process.cwd(), 'scripts', scriptName)} "${xlsxFile}"`)
+
+    // Convert XLSX back to CSV
+    const outputCsvFile = xlsxFile.replace('.xlsx', '_processed.csv')
+    await execPromise(`python3 ${path.join(process.cwd(), 'scripts', 'xlsx_to_csv.py')} "${xlsxFile}" "${outputCsvFile}"`)
+
+    // Read the processed CSV file
+    const fileContent = fs.readFileSync(outputCsvFile)
+
+    // Clean up temporary files
+    fs.unlinkSync(inputFile.filepath

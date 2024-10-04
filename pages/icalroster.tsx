@@ -4,18 +4,24 @@ export default function ICALRoster() {
   const [file, setFile] = useState<File | null>(null)
   const [processing, setProcessing] = useState(false)
   const [processingOption, setProcessingOption] = useState('full')
+  const [error, setError] = useState<string | null>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFile(e.target.files[0])
+      setError(null)
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!file) return
+    if (!file) {
+      setError('Please select a file')
+      return
+    }
 
     setProcessing(true)
+    setError(null)
 
     const formData = new FormData()
     formData.append('file', file)
@@ -33,15 +39,17 @@ export default function ICALRoster() {
         const a = document.createElement('a')
         a.style.display = 'none'
         a.href = url
-        a.download = 'processed_roster.xlsx'
+        a.download = 'processed_roster.csv'
         document.body.appendChild(a)
         a.click()
         window.URL.revokeObjectURL(url)
       } else {
-        console.error('File processing failed')
+        const errorData = await response.json()
+        setError(errorData.message || 'File processing failed')
       }
     } catch (error) {
       console.error('Error processing file:', error)
+      setError('An error occurred while processing the file')
     }
 
     setProcessing(false)
@@ -87,6 +95,9 @@ export default function ICALRoster() {
             {processing ? 'Processing...' : 'Process File'}
           </button>
         </form>
+        {error && (
+          <p className="mt-4 text-red-600 text-center">{error}</p>
+        )}
       </div>
     </div>
   )
