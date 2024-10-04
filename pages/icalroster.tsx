@@ -72,4 +72,22 @@ export default function ICALRoster() {
               id="processingOption"
               value={processingOption}
               onChange={(e) => setProcessingOption(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="full">Full Roster</option>
+              <option value="daysoff">Days Off Only</option>
+              <option value="workdays">Work Days Only</option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            disabled={!file || processing}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          >
+            {processing ? 'Processing...' : 'Process File'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
