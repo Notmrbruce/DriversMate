@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useRouter } from 'next/router'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -8,7 +7,6 @@ export default function ICALRoster() {
   const [file, setFile] = useState<File | null>(null)
   const [processing, setProcessing] = useState(false)
   const [processingOption, setProcessingOption] = useState('full')
-  const router = useRouter()
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -83,20 +81,3 @@ export default function ICALRoster() {
                 <SelectContent>
                   <SelectItem value="full">Full Roster</SelectItem>
                   <SelectItem value="daysoff">Days Off Only</SelectItem>
-                  <SelectItem value="workdays">Work Days Only</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              type="submit"
-              disabled={!file || processing}
-              className="w-full"
-            >
-              {processing ? 'Processing...' : 'Process File'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
